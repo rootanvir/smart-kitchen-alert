@@ -27,3 +27,12 @@
 | GND        | GND                   |
 | SDA        | D2 (GPIO4)            |
 | SCL        | D1 (GPIO5)            |
+
+### 0.96" OLED Display (SSD1306 I²C) to ESP8266 (NodeMCU) Wiring
+
+| OLED Pin | ESP8266 (NodeMCU) Pin |
+|----------|------------------------|
+| VCC      | 3.3V                  |
+| GND      | GND                   |
+| SDA      | D2 (GPIO4)            |
+| SCL      | D1 (GPIO5)            |
