@@ -8,7 +8,7 @@
 // ------------------- Pin Config -------------------
 #define DHTPIN D4
 #define DHTTYPE DHT11
-#define MQ2_AO A0          // Analog output for 3.3V
+#define MQ2_AO A0
 #define BUZZER D8
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -18,11 +18,6 @@
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-// ------------------- Variables -------------------
-unsigned long buzzerStart = 0;
-bool buzzerActive = false;
-const unsigned long buzzerDuration = 10000; // 10 seconds
 
 void setup() {
   Serial.begin(115200);
@@ -39,66 +34,50 @@ void setup() {
   }
 
   display.clearDisplay();
-  display.setTextSize(1);
+  display.setTextSize(2);  // Bigger font
   display.setTextColor(SSD1306_WHITE);
 
   pinMode(BUZZER, OUTPUT);
   digitalWrite(BUZZER, LOW);
 
-  Serial.println("All sensors initialized...");
+  Serial.println("Sensors initialized...");
 }
 
 void loop() {
   // -------- Read Sensors --------
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-  if (isnan(h) || isnan(t)) Serial.println("DHT11 failed!");
-
-  float bmpTemp = bmp.readTemperature();
   float bmpPressure = bmp.readPressure() / 100.0;  // hPa
-
   int mq2Analog = analogRead(MQ2_AO);
 
-  // -------- Buzzer Logic --------
-  if (mq2Analog > SMOKE_THRESHOLD && !buzzerActive) {
-    buzzerActive = true;
-    buzzerStart = millis();
-    digitalWrite(BUZZER, HIGH);
-    Serial.println("Smoke Detected: YES");
+  if (isnan(h) || isnan(t)) {
+    Serial.println("DHT11 failed!");
+    return;
   }
 
-  // Turn off buzzer after 10 seconds
-  if (buzzerActive && (millis() - buzzerStart >= buzzerDuration)) {
-    buzzerActive = false;
+  // -------- Rain Probability --------
+  int rainProb = map((int)h + (1013 - (int)bmpPressure), 0, 200, 0, 100);
+  if (rainProb < 0) rainProb = 0;
+  if (rainProb > 100) rainProb = 100;
+
+  // -------- Smoke Detection (Buzzer only) --------
+  if (mq2Analog > SMOKE_THRESHOLD) {
+    digitalWrite(BUZZER, HIGH);
+    Serial.println("Smoke Detected!");
+  } else {
     digitalWrite(BUZZER, LOW);
   }
-
-  if (!buzzerActive && mq2Analog <= SMOKE_THRESHOLD) {
-    Serial.println("Smoke Detected: NO");
-  }
-
-  // -------- Serial Monitor --------
-  Serial.println("===== Sensor Readings =====");
-  Serial.print("DHT11 -> Temp: "); Serial.print(t); Serial.print("C  Hum: "); Serial.println(h);
-  Serial.print("BMP180 -> Temp: "); Serial.print(bmpTemp); Serial.print("C  Pressure: "); Serial.println(bmpPressure);
-  Serial.print("MQ2 -> AO: "); Serial.println(mq2Analog);
-  Serial.println("===========================");
 
   // -------- OLED Display --------
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Sensor Test");
-  display.println("------------------");
 
-  display.print("DHT11: "); display.print(t); display.print("C  Hum: "); display.println(h);
-  display.print("BMP180: "); display.print(bmpTemp); display.print("C  Press: "); display.println(bmpPressure);
-
-  display.print("Smoke: ");
-  if (mq2Analog > SMOKE_THRESHOLD) display.println("YES");
-  else display.println("NO");
-  display.print("AO: "); display.println(mq2Analog);
+  display.print("T:"); display.print(t); display.println("C");
+  display.print("H:"); display.print(h); display.println("%");
+  display.print("P:"); display.print(bmpPressure); display.println("h");
+  display.print("R:"); display.print(rainProb); display.println("%");
 
   display.display();
 
-  delay(1000); // 1-second loop
+  delay(2000); // Update every 2s
 }
