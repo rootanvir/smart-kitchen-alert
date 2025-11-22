@@ -64,6 +64,7 @@ void loop() {
   if (mq2Analog > SMOKE_THRESHOLD) {
     digitalWrite(BUZZER, HIGH);
     Serial.println("Smoke Detected!");
+    delay(5000); 
   } else {
     digitalWrite(BUZZER, LOW);
   }
