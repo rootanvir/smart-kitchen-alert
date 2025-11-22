@@ -12,7 +12,7 @@
 #define BUZZER D8
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define SMOKE_THRESHOLD 40  // Adjust after testing
+#define SMOKE_THRESHOLD 25  // Adjust after testing
 
 // ------------------- Objects ----------------------
 DHT dht(DHTPIN, DHTTYPE);
